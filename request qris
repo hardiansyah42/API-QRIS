@@ -1,0 +1,40 @@
+<?php
+$apiKey    = trim('YOUR_API_KEY');
+$secretKey = trim('YOUR_SECRET_KEY');
+$timestamp = time();
+
+// 1. Generate Signature
+$payload   = $apiKey . $timestamp;
+$signature = base64_encode(hash_hmac("sha256", $payload, $secretKey, true));
+
+// 2. Headers
+$headers = [
+    "Authorization: Bearer " . $apiKey,
+    "x-api-key: " . $apiKey,
+    "x-timestamp: " . $timestamp,
+    "x-signature: " . $signature,
+    "Content-Type: application/json"
+];
+
+// 3. Body (Contoh Deposit)
+$data = [
+    "order_id" => "ORD-" . time(),
+    "amount" => 50000,
+    "description" => "Topup Saldo",
+    "return_url" => "https://veripay.site/callback",
+    "product_detail" => [
+        ["name" => "Topup Saldo", "price" => 50000, "qty" => 1]
+    ],
+    "customer_detail" => [
+        "name" => "Rahmat Jaya", "email" => "test@gmail.com", "phone" => "08123456789"
+    ]
+];
+
+// 4. Eksekusi
+$ch = curl_init("https://veripay.site/api/v1/merchant/payments");
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+echo curl_exec($ch);
+?>
