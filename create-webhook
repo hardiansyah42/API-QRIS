@@ -1,0 +1,31 @@
+<?php
+$config = [
+    'api_key' => 'API_KEY_CLIENT', // Ganti dengan API Key Anda
+    'secret_key' => 'SECRET_KEY_CLIENT' // Ganti dengan Secret Key Anda
+];
+
+function veripay_generate_signature($config, $timestamp) {
+    $payload   = $config['api_key'] . $timestamp;
+    $rawHash   = hash_hmac("sha256", $payload, $config['secret_key'], true);
+    return base64_encode($rawHash);
+}
+
+function veripay_verify_webhook_signature($config, $received_signature, $timestamp) {
+    $expected_signature = veripay_generate_signature($config, $timestamp);
+    return hash_equals($expected_signature, $received_signature);
+}
+
+// === Webhook Handler ===
+$headers = getallheaders();
+$timestamp = $headers['x-timestamp'] ?? '';
+$signature = $headers['x-signature'] ?? '';
+
+if (!veripay_verify_webhook_signature($config, $signature, $timestamp)) {
+    http_response_code(401);
+    exit("Invalid Signature");
+}
+
+$data = json_decode(file_get_contents("php://input"), true);
+// Lanjutkan proses update database...
+echo json_encode(["status" => "ok"]);
+?>
